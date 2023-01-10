@@ -13,8 +13,7 @@ import inflect
 
 md_iid = "0.5"
 md_version = "0.0.1"
-md_name = "Unit Converter"
-md_description = """
+__doc__ = """
 Extension for converting units of length, mass, speed, temperature, time,
 current, luminosity, printing measurements, molecular substance, and more
 
@@ -27,9 +26,14 @@ Examples:
 `32 degrees F to C`
 `3.14159 rad to degrees`
 """
+
+md_iid = "0.5"
+md_version = "1.0"
+md_name = "Unit Converter"
+md_description = "Convert length, mass, speed, temperature, time, and more"
 md_license = "MIT"
 md_url = "https://github.com/DenverCoder1/unit-converter-albert-ext"
-md_bin_dependencies = ["pint", "inflect"]
+md_lib_dependencies = ["pint", "inflect"]
 md_maintainers = "@DenverCoder1"
 synopsis = "<from_amount> <from_unit> {to|in} <to_unit>"
 
@@ -266,7 +270,13 @@ class Plugin(albert.QueryHandler):
             icon=str(icon_path),
             text=text,
             subtext=subtext,
-            actions=[albert.ClipAction("Copy result to clipboard", text)],
+            actions=[
+                albert.Action(
+                    id="copy",
+                    text="Copy result to clipboard",
+                    callable=lambda: albert.setClipboardText(text=text),
+                )
+            ],
         )
 
     def get_items(self, amount: float, from_unit: str, to_unit: str) -> list[albert.Item]:
