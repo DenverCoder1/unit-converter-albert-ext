@@ -172,6 +172,7 @@ class ConversionResult:
 
 
 class UnitConverter:
+    """Base class for unit converters"""
 
     def convert(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
         """Convert a unit to another unit
@@ -185,7 +186,6 @@ class UnitConverter:
             str: The resulting amount in the new unit
         """
         raise NotImplementedError
-
 
 
 class StandardUnitConverter(UnitConverter):
@@ -299,9 +299,7 @@ class CurrencyConverter(UnitConverter):
         currency = self.aliases.get(currency, currency).upper()
         return currency if currency in self.currencies else None
 
-    def convert(
-        self, amount: float, from_currency: str, to_currency: str
-    ) -> ConversionResult:
+    def convert(self, amount: float, from_currency: str, to_currency: str) -> ConversionResult:
         """Convert a currency to another currency
 
         Args:
@@ -423,7 +421,6 @@ class Plugin(albert.QueryHandler):
         ):
             return self.currency_converter
         return self.unit_converter
-
 
     def _get_items(self, amount: float, from_unit: str, to_unit: str) -> list[albert.Item]:
         """Generate the Albert items to display for the query
