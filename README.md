@@ -4,7 +4,7 @@
 [![License MIT](https://custom-icon-badges.herokuapp.com/github/license/DenverCoder1/unit-converter-albert-ext.svg?logo=repo)](https://github.com/DenverCoder1/unit-converter-albert-ext/blob/main/LICENSE)
 [![code style black](https://custom-icon-badges.herokuapp.com/badge/code%20style-black-black.svg?logo=black-b&logoColor=white)](https://github.com/psf/black)
 
-Extension for converting units of length, mass, speed, temperature, time, current, luminosity, printing measurements, molecular substance, in [Albert launcher](https://albertlauncher.github.io/)
+Extension for converting units of length, mass, speed, temperature, time, current, luminosity, printing measurements, molecular substance, currency, and more in [Albert launcher](https://albertlauncher.github.io/)
 
 ![demo](https://user-images.githubusercontent.com/20955511/147166860-2550fe42-ba6f-4ae6-a305-5e5ed26b606b.gif)
 
@@ -59,6 +59,8 @@ Examples:
 `convert 32 degrees F to C`
 
 `convert 3.14159 rad to degrees`
+
+`convert 100 EUR to USD`
 
 To configure the trigger to be something other than "convert ", open the `Triggers` tab in the Albert settings.
 
