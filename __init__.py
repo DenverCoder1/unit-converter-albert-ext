@@ -34,7 +34,7 @@ Examples:
 """
 
 md_iid = "0.5"
-md_version = "1.1"
+md_version = "1.2"
 md_name = "Unit Converter"
 md_description = "Convert length, mass, temperature, time, currency, and more"
 md_license = "MIT"
