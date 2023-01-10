@@ -33,28 +33,30 @@ git clone https://github.com/DenverCoder1/unit-converter-albert-ext.git
 ```bash
 cd unit-converter-albert-ext
 
-pip install -r requirements.txt -t ~/.local/share/albert/python/site-packages
+pip install -U -r requirements.txt -t ~/.local/share/albert/python/site-packages
 ```
 
-1. Enable the extension in the settings under the `Plugins` tab in the Albert launcher settings
+4. Enable the extension in the settings under the `Plugins` tab.
 
-![settings](https://user-images.githubusercontent.com/20955511/211470845-1c23dcd7-d81a-49ed-ab37-7c52d8bfb6c1.png)
+![open settings](https://user-images.githubusercontent.com/20955511/211635567-f732b0cb-da8f-403f-83e1-59c7d0b137f1.png)
+
+![enable plugin](https://user-images.githubusercontent.com/20955511/211635868-a817c6a9-2bcb-43f7-858f-731a9d51685b.png)
 
 ## Usage
 
-Type an amount and unit, followed by the word "to" or "in" and then the unit you want to convert to.
+Type the trigger, followed by the amount and unit, the word "to" or "in", and then the unit you want to convert to.
 
-`<from_amount> <from_unit> {to|in} <to_unit>`
+`<trigger> <amount> <from_unit> {to|in} <to_unit>`
 
 Examples:
 
-`180 minutes to hrs`
+`convert 180 minutes to hrs`
 
-`100 km in miles`
+`convert 100 km to miles`
 
-`88 mph in kph`
+`convert 88 mph to kph`
 
-`32 degrees F to C`
+`convert 32 degrees F to C`
 
 `convert 3.14159 rad to degrees`
 
@@ -62,11 +64,17 @@ Examples:
 
 To configure the trigger to be something other than "convert ", open the `Triggers` tab in the Albert settings.
 
-![image](https://user-images.githubusercontent.com/20955511/211632106-981ce5a8-0311-47d5-aefe-3ab9d669fc3f.png)
+![configure trigger](https://user-images.githubusercontent.com/20955511/211632106-981ce5a8-0311-47d5-aefe-3ab9d669fc3f.png)
 
 ## Configuration
 
-In `config.jsonc` there are options to customize the extension:
+In `config.jsonc` there are options to customize the behavior of the extension:
+
+### Rounding Precision
+
+The `rounding_precision` option controls how many decimal places the result will be rounded to. By default, this is 3.
+
+The `rounding_precision_zero` option controls how many decimal places the result will be rounded to when the result is close to zero. By default, this is 12.
 
 ### Aliases
 

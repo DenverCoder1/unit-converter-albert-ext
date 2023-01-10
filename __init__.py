@@ -15,11 +15,14 @@ import albert
 import inflect
 import pint
 
-__doc__ = """
+default_trigger = "convert "
+synopsis = "<amount> <from_unit> to <to_unit>"
+
+__doc__ = f"""
 Extension for converting units of length, mass, speed, temperature, time,
 current, luminosity, printing measurements, molecular substance, currency, and more
 
-Synopsis: `<from_amount> <from_unit> {to|in} <to_unit>`
+Synopsis: {default_trigger}{synopsis}
 
 Examples:
 `{default_trigger}180 minutes to hrs`
@@ -31,7 +34,7 @@ Examples:
 """
 
 md_iid = "0.5"
-md_version = "1.0"
+md_version = "1.1"
 md_name = "Unit Converter"
 md_description = "Convert length, mass, temperature, time, currency, and more"
 md_license = "MIT"
@@ -48,7 +51,7 @@ units = pint.UnitRegistry()
 inflect_engine = inflect.engine()
 
 
-def load_config(config_path: Path) -> dict[str, dict[str, str]]:
+def load_config(config_path: Path) -> dict[str, Any]:
     """
     Strip comments and load the config from the config file.
     """
@@ -91,6 +94,8 @@ class ConversionResult:
         self.to_unit = to_unit
         self.dimensionality = dimensionality
         self.display_names = config.get("display_names", {})
+        self.rounding_precision = int(config.get("rounding_precision", 3))
+        self.rounding_precision_zero = int(config.get("rounding_precision_zero", 12))
 
     def __pluralize_unit(self, unit: str) -> str:
         """
@@ -120,15 +125,15 @@ class ConversionResult:
         unit = self.__pluralize_unit(unit) if amount != 1 else unit
         return self.display_names.get(unit, unit)
 
-    def __round_or_truncate(self, num: float) -> float | int:
+    def __format_float(self, num: float) -> str:
         """
-        Round floating point number to 2 decimal places or convert to an integer if ends with .0
+        Format a float to remove trailing zeros and avoid scientific notation
 
         Args:
-            num (float): The number to round
+            num (float): The number to format
 
         Returns:
-            Union[float, int]: The rounded number
+            str: The formatted number
         """
         # if rounding precision is -1, leave as is
         if self.rounding_precision == -1:
@@ -137,7 +142,7 @@ class ConversionResult:
         rounded = round(num, self.rounding_precision)
         # if it is close to zero, round to the given precision for zero
         if rounded == 0 and self.rounding_precision_zero > 0:
-            zero_delta = 1 / 10**self.rounding_precision_zero
+            zero_delta = 1 / 10 ** self.rounding_precision_zero
             if abs(num) > zero_delta:
                 rounded = round(num, self.rounding_precision_zero)
         # format the float to remove trailing zeros and decimal point
@@ -149,7 +154,7 @@ class ConversionResult:
         Return the formatted result amount and unit
         """
         units = self.__display_unit_name(self.to_amount, self.to_unit)
-        return f"{self.__round_or_truncate(float(self.to_amount))} {units}"
+        return f"{self.__format_float(self.to_amount)} {units}"
 
     @property
     def formatted_from(self) -> str:
@@ -157,7 +162,7 @@ class ConversionResult:
         Return the formatted from amount and unit
         """
         units = self.__display_unit_name(self.from_amount, self.from_unit)
-        return f"{self.__round_or_truncate(float(self.from_amount))} {units}"
+        return f"{self.__format_float(self.from_amount)} {units}"
 
     @property
     def icon(self) -> str:
@@ -349,10 +354,10 @@ class Plugin(albert.QueryHandler):
         return md_description
 
     def synopsis(self) -> str:
-        return "<from_amount> <from_unit> {to|in} <to_unit>" if self.defaultTrigger() else ""
+        return synopsis
 
     def defaultTrigger(self) -> str:
-        return ""
+        return default_trigger
 
     def handleQuery(self, query: albert.Query) -> None:
         """Handler for a query received from Albert."""
@@ -392,7 +397,7 @@ class Plugin(albert.QueryHandler):
             albert.warning(f"Icon {icon} does not exist")
             icon_path = Path(__file__).parent / "icons" / "unit_converter.svg"
         return albert.Item(
-            id=self.name(),
+            id=str(icon_path),
             icon=[str(icon_path)],
             text=text,
             subtext=subtext,
