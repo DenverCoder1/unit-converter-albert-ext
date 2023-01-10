@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import json
 import re
 import traceback
 from pathlib import Path
-from typing import Dict, List, Union
 
 import albert
 import pint
 import inflect
 
-__doc__ = """
+md_iid = "0.5"
+md_version = "0.0.1"
+md_name = "Unit Converter"
+md_description = """
 Extension for converting units of length, mass, speed, temperature, time,
 current, luminosity, printing measurements, molecular substance, and more
 
@@ -23,13 +27,14 @@ Examples:
 `32 degrees F to C`
 `3.14159 rad to degrees`
 """
-__title__ = "Unit Converter"
-__version__ = "0.0.1"
-__authors__ = "Jonah Lawrence"
-__py_deps__ = ["pint", "inflect"]
+md_license = "MIT"
+md_url = "https://github.com/DenverCoder1/unit-converter-albert-ext"
+md_bin_dependencies = ["pint", "inflect"]
+md_maintainers = "@DenverCoder1"
+synopsis = "<from_amount> <from_unit> {to|in} <to_unit>"
 
 unit_convert_regex = re.compile(
-    r"(?P<from_amount>[-]?\d+[.]?\d*)\s?(?P<from_unit>.*)\s(?:to|in)\s(?P<to_unit>.*)",
+    r"(?P<from_amount>-?\d+\.?\d*)\s?(?P<from_unit>.*)\s(?:to|in)\s(?P<to_unit>.*)",
     re.I,
 )
 
@@ -37,7 +42,7 @@ units = pint.UnitRegistry()
 inflect_engine = inflect.engine()
 
 
-def load_config(config_path: Path) -> str:
+def load_config(config_path: Path) -> dict[str, dict[str, str]]:
     """
     Strip comments and load the config from the config file.
     """
@@ -104,7 +109,7 @@ class ConversionResult:
         unit = self.__pluralize_unit(unit) if amount != 1 else str(unit)
         return self.display_names.get(unit, unit)
 
-    def __round_or_truncate(self, num: float) -> Union[float, int]:
+    def __round_or_truncate(self, num: float) -> float | int:
         """
         Round floating point number to 2 decimal places or convert to an integer if ends with .0
 
@@ -153,7 +158,7 @@ class UnitConverter:
         """
         Initialize the UnitConverter
         """
-        self.aliases: Dict[str, str] = config.get("aliases", {})
+        self.aliases: dict[str, str] = config.get("aliases", {})
 
     def _get_unit(self, unit: str) -> pint.Unit:
         """
@@ -179,14 +184,12 @@ class UnitConverter:
             # check if the lowercase version is a valid unit
             return units.__getattr__(unit.lower())
 
-    def convert_units(
-        self, amount: str, from_unit: str, to_unit: str
-    ) -> ConversionResult:
+    def convert_units(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
         """
         Convert a unit to another unit
 
         Args:
-            amount (str): The amount to convert
+            amount (float): The amount to convert
             from_unit (str): The unit to convert from
             to_unit (str): The unit to convert to
 
@@ -197,7 +200,7 @@ class UnitConverter:
             pint.errors.UndefinedUnitError: If the unit is not valid
             pint.errors.DimensionalityError: If the units are not compatible
         """
-        input_unit = units.Quantity(float(amount), self._get_unit(from_unit))
+        input_unit = units.Quantity(amount, self._get_unit(from_unit))
         output_unit = self._get_unit(to_unit)
         result = input_unit.to(output_unit)
         return ConversionResult(
@@ -208,86 +211,94 @@ class UnitConverter:
         )
 
 
-def create_item(text: str, subtext: str, icon: str = "") -> albert.Item:
-    """
-    Create an albert.Item from a text and subtext
+class Plugin(albert.QueryHandler):
+    def id(self) -> str:
+        return __name__
 
-    Args:
-        text (str): The text to display
-        subtext (str): The subtext to display
-        icon (Optional[str]): The icon to display. If not specified, the default icon will be used
+    def name(self) -> str:
+        return md_name
 
-    Returns:
-        albert.Item: The item to be added to the list of results
-    """
-    icon_path = Path(__file__).parent / "icons" / icon
-    if not icon or not icon_path.exists():
-        albert.warning(f"Icon {icon} does not exist")
-        icon_path = Path(__file__).parent / "icons" / "unit_converter.svg"
-    return albert.Item(
-        id=__title__,
-        icon=str(icon_path),
-        text=text,
-        subtext=subtext,
-        actions=[albert.ClipAction("Copy result to clipboard", text)],
-    )
+    def description(self) -> str:
+        return md_description
 
+    def synopsis(self) -> str:
+        return synopsis
 
-def get_items(amount: float, from_unit: str, to_unit: str) -> List[albert.Item]:
-    """
-    Generate the Albert items to display for the query
+    def handleQuery(self, query: albert.Query) -> None:
+        """Handler for a query received from Albert."""
+        query_string = query.string.strip()
+        match = unit_convert_regex.fullmatch(query_string)
+        if match:
+            albert.info(f"Matched {query_string}")
+            try:
+                items = self.get_items(
+                    float(match.group("from_amount")),
+                    match.group("from_unit").strip(),
+                    match.group("to_unit").strip(),
+                )
+                query.add(items)
+            except Exception as error:
+                albert.warning(f"Error: {error}")
+                tb = "".join(
+                    traceback.format_exception(error.__class__, error, error.__traceback__)
+                )
+                albert.warning(tb)
+                albert.info("Something went wrong. Make sure you're using the correct format.")
 
-    Args:
-        amount (float): The amount to convert from
-        from_unit (str): The unit to convert from
-        to_unit (str): The unit to convert to
+    def create_item(self, text: str, subtext: str, icon: str = "") -> albert.Item:
+        """
+        Create an albert.Item from a text and subtext
 
-    Returns:
-        List[albert.Item]: The list of items to display
-    """
-    uc = UnitConverter()
-    try:
-        # convert the units
-        result = uc.convert_units(amount, from_unit, to_unit)
-        # return the result
-        return [
-            create_item(
-                result.formatted_result,
-                f"Converted from {result.formatted_from}",
-                result.icon,
-            )
-        ]
-    except pint.errors.DimensionalityError as e:
-        albert.warning(f"DimensionalityError: {e}")
-        albert.warning(traceback.format_exc())
-        return [
-            create_item(f"Unable to convert {amount} {from_unit} to {to_unit}", str(e))
-        ]
-    except pint.errors.UndefinedUnitError as e:
-        albert.warning(f"UndefinedUnitError: {e}")
-        albert.warning(traceback.format_exc())
+        Args:
+            text (str): The text to display
+            subtext (str): The subtext to display
+            icon (Optional[str]): The icon to display. If not specified, the default icon will be used
 
+        Returns:
+            albert.Item: The item to be added to the list of results
+        """
+        icon_path = Path(__file__).parent / "icons" / icon
+        if not icon or not icon_path.exists():
+            albert.warning(f"Icon {icon} does not exist")
+            icon_path = Path(__file__).parent / "icons" / "unit_converter.svg"
+        return albert.Item(
+            id=self.name(),
+            icon=str(icon_path),
+            text=text,
+            subtext=subtext,
+            actions=[albert.ClipAction("Copy result to clipboard", text)],
+        )
 
-def handleQuery(query: albert.Query) -> List[albert.Item]:
-    """
-    Handler for a query received from Albert.
-    """
-    query_string = query.string.strip()
-    match = unit_convert_regex.fullmatch(query_string)
-    if match:
-        albert.info(f"Matched {query_string}")
+    def get_items(self, amount: float, from_unit: str, to_unit: str) -> list[albert.Item]:
+        """
+        Generate the Albert items to display for the query
+
+        Args:
+            amount (float): The amount to convert from
+            from_unit (str): The unit to convert from
+            to_unit (str): The unit to convert to
+
+        Returns:
+            List[albert.Item]: The list of items to display
+        """
+        uc = UnitConverter()
         try:
-            return get_items(
-                float(match.group("from_amount")),
-                match.group("from_unit").strip(),
-                match.group("to_unit").strip(),
-            )
-        except Exception as error:
-            albert.warning(f"Error: {error}")
-            tb = "".join(
-                traceback.format_exception(error.__class__, error, error.__traceback__)
-            )
-            albert.warning(tb)
-            albert.info(
-                "Something went wrong. Make sure you're using the correct format."
-            )
+            # convert the units
+            result = uc.convert_units(amount, from_unit, to_unit)
+            # return the result
+            return [
+                self.create_item(
+                    result.formatted_result,
+                    f"Converted from {result.formatted_from}",
+                    result.icon,
+                )
+            ]
+        except pint.errors.DimensionalityError as e:
+            albert.warning(f"DimensionalityError: {e}")
+            albert.warning(traceback.format_exc())
+            return [
+                self.create_item(f"Unable to convert {amount} {from_unit} to {to_unit}", str(e))
+            ]
+        except pint.errors.UndefinedUnitError as e:
+            albert.warning(f"UndefinedUnitError: {e}")
+            albert.warning(traceback.format_exc())
