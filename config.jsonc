@@ -1,4 +1,14 @@
 {
+    // Number of decimal places to round to
+    //
+    // If specified as -1, the number will not be manually rounded
+    "rounding_precision": 3,
+
+    // Number of decimal places to round to when the result is close to zero
+    //
+    // If specified as -1, the number will not be manually rounded
+    "rounding_precision_zero": 12,
+
     // Unit aliases to replace when parsing
     //
     // Units may be added here to override the default behavior or create aliases for existing units
