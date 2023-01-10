@@ -6,7 +6,7 @@
 
 Extension for converting units of length, mass, speed, temperature, time, current, luminosity, printing measurements, molecular substance, currency, and more in [Albert launcher](https://albertlauncher.github.io/)
 
-![demo](https://user-images.githubusercontent.com/20955511/147166860-2550fe42-ba6f-4ae6-a305-5e5ed26b606b.gif)
+![demo 0.18](https://user-images.githubusercontent.com/20955511/211650412-b42412f3-c4d5-4d2a-8b77-05ff39fcb48e.gif)
 
 ## Installation
 
