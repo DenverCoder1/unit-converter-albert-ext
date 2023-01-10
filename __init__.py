@@ -315,7 +315,7 @@ class CurrencyConverter:
             UnknownCurrencyError: If the currency is not valid
         """
         # update the currencies every 24 hours
-        if (datetime.now() - self.last_update).days >= 1:
+        if not self.currencies or (datetime.now() - self.last_update).days >= 1:
             self.currencies = self._get_currencies()
             self.last_update = datetime.now()
         # get the currency rates
