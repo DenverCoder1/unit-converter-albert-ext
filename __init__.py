@@ -65,9 +65,7 @@ config = load_config(config_path)
 
 
 class ConversionResult:
-    """
-    A class to represent the result of a unit conversion
-    """
+    """A class to represent the result of a unit conversion"""
 
     def __init__(
         self,
@@ -78,8 +76,7 @@ class ConversionResult:
         dimensionality: str,
         source: str = "",
     ):
-        """
-        Initialize the ConversionResult
+        """Initialize the ConversionResult
 
         Args:
             from_amount (float): The amount to convert from
@@ -100,8 +97,7 @@ class ConversionResult:
         self.rounding_precision_zero = int(config.get("rounding_precision_zero", 12))
 
     def __pluralize_unit(self, unit: str) -> str:
-        """
-        Pluralize the unit
+        """Pluralize the unit
 
         Args:
             unit (str): The unit to pluralize
@@ -115,8 +111,7 @@ class ConversionResult:
         return inflect_engine.plural(unit)
 
     def __display_unit_name(self, amount: float, unit: str) -> str:
-        """
-        Display the name of the unit with plural if necessary
+        """Display the name of the unit with plural if necessary
 
         Args:
             unit (str): The unit to display
@@ -128,8 +123,7 @@ class ConversionResult:
         return self.display_names.get(unit, unit)
 
     def __format_float(self, num: float) -> str:
-        """
-        Format a float to remove trailing zeros and avoid scientific notation
+        """Format a float to remove trailing zeros and avoid scientific notation
 
         Args:
             num (float): The number to format
@@ -152,17 +146,13 @@ class ConversionResult:
 
     @property
     def formatted_result(self) -> str:
-        """
-        Return the formatted result amount and unit
-        """
+        """Return the formatted result amount and unit"""
         units = self.__display_unit_name(self.to_amount, self.to_unit)
         return f"{self.__format_float(self.to_amount)} {units}"
 
     @property
     def formatted_from(self) -> str:
-        """
-        Return the formatted from amount and unit
-        """
+        """Return the formatted from amount and unit"""
         units = self.__display_unit_name(self.from_amount, self.from_unit)
         result = f"{self.__format_float(self.from_amount)} {units}"
         if self.source:
@@ -171,30 +161,25 @@ class ConversionResult:
 
     @property
     def icon(self) -> str:
-        """
-        Return the icon for the result's dimensionality
-        """
+        """Return the icon for the result's dimensionality"""
         # strip characters from the dimensionality if not alphanumeric or underscore
         dimensionality = re.sub(r"[^\w]", "", self.dimensionality)
         return f"{dimensionality}.svg"
 
     def __repr__(self):
-        """
-        Return the representation of the result
-        """
+        """Return the representation of the result"""
         return f"{self.formatted_from} = {self.formatted_result}"
 
 
 class UnitConverter:
+    """Class to convert standard units of measurement"""
+
     def __init__(self):
-        """
-        Initialize the UnitConverter
-        """
+        """Initialize the UnitConverter"""
         self.aliases: dict[str, str] = config.get("aliases", {})
 
     def _get_unit(self, unit: str) -> pint.Unit:
-        """
-        Check if the unit is a valid unit and return it
+        """Check if the unit is a valid unit and return it
         If any aliases are found, replace the unit with the alias
         If the unit is not valid, check if making it lowercase will fix it
         If not, raise the UndefinedUnitError
@@ -216,8 +201,7 @@ class UnitConverter:
         return units.__getattr__(unit.lower())
 
     def convert_units(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
-        """
-        Convert a unit to another unit
+        """Convert a unit to another unit
 
         Args:
             amount (float): The amount to convert
@@ -244,9 +228,10 @@ class UnitConverter:
 
 
 class UnknownCurrencyError(Exception):
+    """Exception to raise when an unknown currency is passed to convert"""
+
     def __init__(self, currency: str):
-        """
-        Initialize the UnknownCurrencyError
+        """Initialize the UnknownCurrencyError
 
         Args:
             currency (str): The unknown currency
@@ -256,20 +241,19 @@ class UnknownCurrencyError(Exception):
 
 
 class CurrencyConverter:
+    """Class to convert currencies"""
 
     API_URL = "https://open.er-api.com/v6/latest/USD"
+    ATTRIBUTION = "Rates by https://www.exchangerate-api.com"
 
     def __init__(self):
-        """
-        Initialize the CurrencyConverter
-        """
+        """Initialize the CurrencyConverter"""
         self.last_update = datetime.now()
         self.aliases: dict[str, str] = config.get("aliases", {})
         self.currencies = self._get_currencies()
 
     def _get_currencies(self) -> dict[str, float]:
-        """
-        Get the currencies from the API
+        """Get the currencies from the API
 
         Returns:
             dict[str, float]: The currencies
@@ -282,9 +266,8 @@ class CurrencyConverter:
         albert.info(f'Currencies updated: {data["rates"]}')
         return data["rates"]
 
-    def normalize_currency(self, currency: str) -> str | None:
-        """
-        Get the currency name normalized using aliases
+    def get_currency(self, currency: str) -> str | None:
+        """Get the currency name normalized using aliases and capitalization
 
         Args:
             currency (str): The currency to normalize
@@ -298,8 +281,7 @@ class CurrencyConverter:
     def convert_currency(
         self, amount: float, from_currency: str, to_currency: str
     ) -> ConversionResult:
-        """
-        Convert a currency to another currency
+        """Convert a currency to another currency
 
         Args:
             amount (float): The amount to convert
@@ -317,8 +299,8 @@ class CurrencyConverter:
             self.currencies = self._get_currencies()
             self.last_update = datetime.now()
         # get the currency rates
-        from_unit = self.normalize_currency(from_currency)
-        to_unit = self.normalize_currency(to_currency)
+        from_unit = self.get_currency(from_currency)
+        to_unit = self.get_currency(to_currency)
         # convert the currency
         if from_unit is None:
             raise UnknownCurrencyError(from_currency)
@@ -333,13 +315,14 @@ class CurrencyConverter:
             to_amount=result,
             to_unit=to_unit,
             dimensionality="currency",
-            source="Rates by https://www.exchangerate-api.com",
+            source=self.ATTRIBUTION,
         )
 
 
 class Plugin(albert.QueryHandler):
+    """The plugin class"""
+
     def initialize(self):
-        """Initialize the plugin."""
         self.unit_converter = UnitConverter()
         self.currency_converter = CurrencyConverter()
 
@@ -359,7 +342,6 @@ class Plugin(albert.QueryHandler):
         return default_trigger
 
     def handleQuery(self, query: albert.Query) -> None:
-        """Handler for a query received from Albert."""
         query_string = query.string.strip()
         match = unit_convert_regex.fullmatch(query_string)
         if match:
@@ -380,8 +362,7 @@ class Plugin(albert.QueryHandler):
                 albert.info("Something went wrong. Make sure you're using the correct format.")
 
     def create_item(self, text: str, subtext: str, icon: str = "") -> albert.Item:
-        """
-        Create an albert.Item from a text and subtext
+        """Create an albert.Item from a text and subtext
 
         Args:
             text (str): The text to display
@@ -410,8 +391,7 @@ class Plugin(albert.QueryHandler):
         )
 
     def get_items(self, amount: float, from_unit: str, to_unit: str) -> list[albert.Item]:
-        """
-        Generate the Albert items to display for the query
+        """Generate the Albert items to display for the query
 
         Args:
             amount (float): The amount to convert from
@@ -424,8 +404,8 @@ class Plugin(albert.QueryHandler):
         try:
             # convert currencies
             if (
-                self.currency_converter.normalize_currency(from_unit) is not None
-                and self.currency_converter.normalize_currency(to_unit) is not None
+                self.currency_converter.get_currency(from_unit) is not None
+                and self.currency_converter.get_currency(to_unit) is not None
             ):
                 result = self.currency_converter.convert_currency(amount, from_unit, to_unit)
             # convert standard units
