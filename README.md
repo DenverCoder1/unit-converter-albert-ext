@@ -20,7 +20,7 @@ The data directories reside in the data directories of the application defined b
 /usr/share/albert/python/plugins
 ```
 
-1. Clone this repository into your `plugins` directory.
+2. Clone this repository into your `plugins` directory.
 
 ```bash
 cd /path/to/plugins  # see above for the path
@@ -28,7 +28,7 @@ cd /path/to/plugins  # see above for the path
 git clone https://github.com/DenverCoder1/unit-converter-albert-ext.git
 ```
 
-1. Ensure that `pint` and `inflect` are installed in `~/.local/share/albert/python/site-packages`.
+3. Ensure that `pint` and `inflect` are installed in `~/.local/share/albert/python/site-packages`.
 
 ```bash
 cd unit-converter-albert-ext
