@@ -292,6 +292,10 @@ class CurrencyConverter(UnitConverter):
         Returns:
             Optional[str]: The currency name or None if not found
         """
+        # update the currencies every 24 hours
+        if not self.currencies or (datetime.now() - self.last_update).days >= 1:
+            self.currencies = self._get_currencies()
+            self.last_update = datetime.now()
         currency = self.aliases.get(currency, currency).upper()
         return currency if currency in self.currencies else None
 
@@ -311,10 +315,6 @@ class CurrencyConverter(UnitConverter):
         Raises:
             UnknownCurrencyError: If the currency is not valid
         """
-        # update the currencies every 24 hours
-        if not self.currencies or (datetime.now() - self.last_update).days >= 1:
-            self.currencies = self._get_currencies()
-            self.last_update = datetime.now()
         # get the currency rates
         from_unit = self.get_currency(from_currency)
         to_unit = self.get_currency(to_currency)
