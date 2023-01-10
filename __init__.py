@@ -172,6 +172,23 @@ class ConversionResult:
 
 
 class UnitConverter:
+
+    def convert(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
+        """Convert a unit to another unit
+
+        Args:
+            amount (float): The amount to convert
+            from_unit (str): The unit to convert from
+            to_unit (str): The unit to convert to
+
+        Returns:
+            str: The resulting amount in the new unit
+        """
+        raise NotImplementedError
+
+
+
+class StandardUnitConverter(UnitConverter):
     """Class to convert standard units of measurement"""
 
     def __init__(self):
@@ -200,7 +217,7 @@ class UnitConverter:
         # check if the lowercase version is a valid unit
         return units.__getattr__(unit.lower())
 
-    def convert_units(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
+    def convert(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
         """Convert a unit to another unit
 
         Args:
@@ -240,7 +257,7 @@ class UnknownCurrencyError(Exception):
         super().__init__(f"Unknown currency: {currency}")
 
 
-class CurrencyConverter:
+class CurrencyConverter(UnitConverter):
     """Class to convert currencies"""
 
     API_URL = "https://open.er-api.com/v6/latest/USD"
@@ -278,7 +295,7 @@ class CurrencyConverter:
         currency = self.aliases.get(currency, currency).upper()
         return currency if currency in self.currencies else None
 
-    def convert_currency(
+    def convert(
         self, amount: float, from_currency: str, to_currency: str
     ) -> ConversionResult:
         """Convert a currency to another currency
@@ -323,7 +340,7 @@ class Plugin(albert.QueryHandler):
     """The plugin class"""
 
     def initialize(self):
-        self.unit_converter = UnitConverter()
+        self.unit_converter = StandardUnitConverter()
         self.currency_converter = CurrencyConverter()
 
     def id(self) -> str:
@@ -347,7 +364,7 @@ class Plugin(albert.QueryHandler):
         if match:
             albert.info(f"Matched {query_string}")
             try:
-                items = self.get_items(
+                items = self._get_items(
                     float(match.group("from_amount")),
                     match.group("from_unit").strip(),
                     match.group("to_unit").strip(),
@@ -361,7 +378,7 @@ class Plugin(albert.QueryHandler):
                 albert.warning(tb)
                 albert.info("Something went wrong. Make sure you're using the correct format.")
 
-    def create_item(self, text: str, subtext: str, icon: str = "") -> albert.Item:
+    def _create_item(self, text: str, subtext: str, icon: str = "") -> albert.Item:
         """Create an albert.Item from a text and subtext
 
         Args:
@@ -390,7 +407,25 @@ class Plugin(albert.QueryHandler):
             ],
         )
 
-    def get_items(self, amount: float, from_unit: str, to_unit: str) -> list[albert.Item]:
+    def _get_converter(self, from_unit: str, to_unit: str) -> UnitConverter:
+        """Get the converter to use
+
+        Args:
+            from_unit (str): The unit to convert from
+            to_unit (str): The unit to convert to
+
+        Returns:
+            UnitConverter: The converter to use
+        """
+        if (
+            self.currency_converter.get_currency(from_unit) is not None
+            and self.currency_converter.get_currency(to_unit) is not None
+        ):
+            return self.currency_converter
+        return self.unit_converter
+
+
+    def _get_items(self, amount: float, from_unit: str, to_unit: str) -> list[albert.Item]:
         """Generate the Albert items to display for the query
 
         Args:
@@ -402,18 +437,11 @@ class Plugin(albert.QueryHandler):
             List[albert.Item]: The list of items to display
         """
         try:
-            # convert currencies
-            if (
-                self.currency_converter.get_currency(from_unit) is not None
-                and self.currency_converter.get_currency(to_unit) is not None
-            ):
-                result = self.currency_converter.convert_currency(amount, from_unit, to_unit)
-            # convert standard units
-            else:
-                result = self.unit_converter.convert_units(amount, from_unit, to_unit)
+            converter = self._get_converter(from_unit, to_unit)
+            result = converter.convert(amount, from_unit, to_unit)
             # return the result
             return [
-                self.create_item(
+                self._create_item(
                     result.formatted_result,
                     f"Converted from {result.formatted_from}",
                     result.icon,
@@ -423,7 +451,7 @@ class Plugin(albert.QueryHandler):
             albert.warning(f"DimensionalityError: {e}")
             albert.warning(traceback.format_exc())
             return [
-                self.create_item(f"Unable to convert {amount} {from_unit} to {to_unit}", str(e))
+                self._create_item(f"Unable to convert {amount} {from_unit} to {to_unit}", str(e))
             ]
         except pint.errors.UndefinedUnitError as e:
             albert.warning(f"UndefinedUnitError: {e}")
