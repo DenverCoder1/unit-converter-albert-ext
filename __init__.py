@@ -11,8 +11,6 @@ import albert
 import pint
 import inflect
 
-md_iid = "0.5"
-md_version = "0.0.1"
 __doc__ = """
 Extension for converting units of length, mass, speed, temperature, time,
 current, luminosity, printing measurements, molecular substance, and more
