@@ -10,37 +10,35 @@ Extension for converting units of length, mass, speed, temperature, time, curren
 
 ## Installation
 
-1. Locate the `modules` directory in the Python extension data directory.
+1. Locate the `plugins` directory in the Python extension data directory.
 
 The data directories reside in the data directories of the application defined by Qt. Hence on Linux the modules would be looked up in the following directories (in this order):
 
 ```
-~/.local/share/albert/org.albert.extension.python/modules
-/usr/local/share/albert/org.albert.extension.python/modules
-/usr/share/albert/org.albert.extension.python/modules
+~/.local/share/albert/python/plugins
+/usr/local/share/albert/python/plugins
+/usr/share/albert/python/plugins
 ```
 
-(Note: Double-clicking on a module in the settings will open the directory in the file manager.)
-
-2. Clone this repository into your `modules` directory.
+1. Clone this repository into your `plugins` directory.
 
 ```bash
-cd /path/to/modules
+cd /path/to/plugins  # see above for the path
 
 git clone https://github.com/DenverCoder1/unit-converter-albert-ext.git
 ```
 
-3. Ensure that `pint` and `inflect` are installed using pip.
+1. Ensure that `pint` and `inflect` are installed in `~/.local/share/albert/python/site-packages`.
 
 ```bash
-python3 -m pip install -U pint
+cd unit-converter-albert-ext
 
-python3 -m pip install -U inflect
+pip install -r requirements.txt -t ~/.local/share/albert/python/site-packages
 ```
 
 4. Enable the extension in the settings under `Extensions > Python`.
 
-![settings](https://user-images.githubusercontent.com/20955511/147167375-85d2bf2a-cd2b-4635-9c66-1d55dbe24d91.png)
+![settings](https://user-images.githubusercontent.com/20955511/211470845-1c23dcd7-d81a-49ed-ab37-7c52d8bfb6c1.png)
 
 ## Usage
 

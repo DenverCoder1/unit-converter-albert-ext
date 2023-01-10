@@ -33,7 +33,6 @@ md_license = "MIT"
 md_url = "https://github.com/DenverCoder1/unit-converter-albert-ext"
 md_lib_dependencies = ["pint", "inflect"]
 md_maintainers = "@DenverCoder1"
-synopsis = "<from_amount> <from_unit> {to|in} <to_unit>"
 
 unit_convert_regex = re.compile(
     r"(?P<from_amount>-?\d+\.?\d*)\s?(?P<from_unit>.*)\s(?:to|in)\s(?P<to_unit>.*)",
@@ -179,12 +178,11 @@ class UnitConverter:
             pint.errors.UndefinedUnitError: If the unit is not valid
         """
         unit = self.aliases.get(unit, unit)
-        try:
+        if units.__contains__(unit):
             # return the unit if it is valid
             return units.__getattr__(unit)
-        except pint.errors.UndefinedUnitError:
-            # check if the lowercase version is a valid unit
-            return units.__getattr__(unit.lower())
+        # check if the lowercase version is a valid unit
+        return units.__getattr__(unit.lower())
 
     def convert_units(self, amount: float, from_unit: str, to_unit: str) -> ConversionResult:
         """
@@ -224,7 +222,10 @@ class Plugin(albert.QueryHandler):
         return md_description
 
     def synopsis(self) -> str:
-        return synopsis
+        return "<from_amount> <from_unit> {to|in} <to_unit>" if self.defaultTrigger() else ""
+
+    def defaultTrigger(self) -> str:
+        return ""
 
     def handleQuery(self, query: albert.Query) -> None:
         """Handler for a query received from Albert."""
@@ -265,7 +266,7 @@ class Plugin(albert.QueryHandler):
             icon_path = Path(__file__).parent / "icons" / "unit_converter.svg"
         return albert.Item(
             id=self.name(),
-            icon=str(icon_path),
+            icon=[str(icon_path)],
             text=text,
             subtext=subtext,
             actions=[
@@ -310,3 +311,4 @@ class Plugin(albert.QueryHandler):
         except pint.errors.UndefinedUnitError as e:
             albert.warning(f"UndefinedUnitError: {e}")
             albert.warning(traceback.format_exc())
+            return []
