@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.request import urlopen
-from xml.etree import ElementTree
 
 import albert
 import inflect
@@ -77,6 +76,7 @@ class ConversionResult:
         to_amount: float,
         to_unit: str,
         dimensionality: str,
+        source: str = "",
     ):
         """
         Initialize the ConversionResult
@@ -87,12 +87,14 @@ class ConversionResult:
             to_amount (float): The resulting amount
             to_unit (str): The unit converted to
             dimensionality (str): The dimensionality of the result
+            source (str): The source of the conversion for attribution
         """
         self.from_amount = from_amount
         self.from_unit = from_unit
         self.to_amount = to_amount
         self.to_unit = to_unit
         self.dimensionality = dimensionality
+        self.source = source
         self.display_names = config.get("display_names", {})
         self.rounding_precision = int(config.get("rounding_precision", 3))
         self.rounding_precision_zero = int(config.get("rounding_precision_zero", 12))
@@ -142,7 +144,7 @@ class ConversionResult:
         rounded = round(num, self.rounding_precision)
         # if it is close to zero, round to the given precision for zero
         if rounded == 0 and self.rounding_precision_zero > 0:
-            zero_delta = 1 / 10 ** self.rounding_precision_zero
+            zero_delta = 1 / 10**self.rounding_precision_zero
             if abs(num) > zero_delta:
                 rounded = round(num, self.rounding_precision_zero)
         # format the float to remove trailing zeros and decimal point
@@ -162,7 +164,10 @@ class ConversionResult:
         Return the formatted from amount and unit
         """
         units = self.__display_unit_name(self.from_amount, self.from_unit)
-        return f"{self.__format_float(self.from_amount)} {units}"
+        result = f"{self.__format_float(self.from_amount)} {units}"
+        if self.source:
+            result += f" ({self.source})"
+        return result
 
     @property
     def icon(self) -> str:
@@ -252,7 +257,7 @@ class UnknownCurrencyError(Exception):
 
 class CurrencyConverter:
 
-    API_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
+    API_URL = "https://open.er-api.com/v6/latest/USD"
 
     def __init__(self):
         """
@@ -270,19 +275,12 @@ class CurrencyConverter:
             dict[str, float]: The currencies
         """
         with urlopen(self.API_URL) as response:
-            xml = response.read().decode("utf-8").strip()
-        root = ElementTree.fromstring(xml)
-        currency_cube = root[-1][0]
-        if currency_cube is None:
-            albert.warning("Could not find currencies in XML")
+            data = json.loads(response.read().decode("utf-8"))
+        if not data or "rates" not in data:
+            albert.info("No currencies found")
             return {}
-        currencies = {
-            currency.attrib["currency"]: float(currency.attrib["rate"])
-            for currency in currency_cube
-        }
-        currencies["EUR"] = 1
-        albert.info(f"Loaded currencies: {currencies}")
-        return currencies
+        albert.info(f'Currencies updated: {data["rates"]}')
+        return data["rates"]
 
     def normalize_currency(self, currency: str) -> str | None:
         """
@@ -335,6 +333,7 @@ class CurrencyConverter:
             to_amount=result,
             to_unit=to_unit,
             dimensionality="currency",
+            source="Rates by https://www.exchangerate-api.com",
         )
 
 
