@@ -1,3 +1,7 @@
+> **Archive Notice**
+> 
+> This repo is no longer needed since this extension is now merged into the [upstream Python plugin repo](https://github.com/albertlauncher/python/tree/master/unit_converter).
+
 # unit-converter-albert-ext
 
 [![discord](https://custom-icon-badges.herokuapp.com/discord/819650821314052106?color=5865F2&logo=discord-outline&logoColor=white "Dev Pro Tips Discussion & Support Server")](https://discord.gg/fPrdqh3Zfu)
